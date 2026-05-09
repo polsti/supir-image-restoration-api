@@ -4,7 +4,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import FileResponse
 
 from app.utils import save_uploaded_image
-from app.supir_service import mock_restore_image
+from app.supir_service import supir_service
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -42,7 +42,7 @@ async def restore_image(
 ):
     saved_path = await save_uploaded_image(image, INPUT_DIR)
 
-    output_path = mock_restore_image(
+    output_path = supir_service.restore_image(
         input_path=saved_path,
         output_dir=OUTPUT_DIR,
         upscale=upscale,
