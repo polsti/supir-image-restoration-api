@@ -1,18 +1,21 @@
 from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import FileResponse
 
 from app.utils import save_uploaded_image
+from app.supir_service import mock_restore_image
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 INPUT_DIR = BASE_DIR / "inputs"
+OUTPUT_DIR = BASE_DIR / "outputs"
 
 
 app = FastAPI(
     title="SUPIR Image Restoration API",
     description="REST API for image restoration and super-resolution using SUPIR.",
-    version="0.2.0",
+    version="0.3.0",
 )
 
 
@@ -39,10 +42,14 @@ async def restore_image(
 ):
     saved_path = await save_uploaded_image(image, INPUT_DIR)
 
-    return {
-        "message": "Image uploaded successfully",
-        "original_filename": image.filename,
-        "saved_filename": saved_path.name,
-        "saved_path": str(saved_path),
-        "upscale": upscale,
-    }
+    output_path = mock_restore_image(
+        input_path=saved_path,
+        output_dir=OUTPUT_DIR,
+        upscale=upscale,
+    )
+
+    return FileResponse(
+        path=output_path,
+        media_type="image/png",
+        filename="restored_image.png",
+    )
