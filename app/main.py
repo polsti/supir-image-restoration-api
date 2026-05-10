@@ -15,7 +15,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 app = FastAPI(
     title="SUPIR Image Restoration API",
     description="REST API for image restoration and super-resolution using SUPIR.",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 
@@ -39,17 +39,26 @@ def health_check():
 async def restore_image(
     image: UploadFile = File(...),
     upscale: int = Form(2),
+    mode: str = Form("mock"),
+    model_type: str = Form("Q"),
 ):
+    if upscale not in [1, 2, 4]:
+        return {
+            "error": "Upscale must be 1, 2, or 4"
+        }
+
     saved_path = await save_uploaded_image(image, INPUT_DIR)
 
     output_path = supir_service.restore_image(
         input_path=saved_path,
         output_dir=OUTPUT_DIR,
         upscale=upscale,
+        mode=mode,
+        model_type=model_type,
     )
 
     return FileResponse(
-        path=output_path,
+        path=str(output_path),
         media_type="image/png",
         filename="restored_image.png",
     )
