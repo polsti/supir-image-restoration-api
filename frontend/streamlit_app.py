@@ -34,8 +34,12 @@ upscale = st.selectbox(
 
 mode = st.selectbox(
     "Restoration mode",
-    options=["mock", "supir"],
+    options=["balanced", "strong", "old_photo"],
     index=0,
+)
+st.caption(
+    "Balanced = normal restoration, Strong = stronger sharpening/contrast, "
+    "Old photo = grayscale-style restoration for damaged old images."
 )
 
 model_type = st.selectbox(
