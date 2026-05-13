@@ -25,7 +25,9 @@ uploaded_file = st.file_uploader(
     "Upload image",
     type=["jpg", "jpeg", "png"],
 )
-
+# (width * upscale, height * upscale)
+# if 300x300 and upscale 2 -> 600x600
+# just a resize
 upscale = st.selectbox(
     "Upscale factor",
     options=[1, 2, 4],
@@ -41,7 +43,9 @@ st.caption(
     "Balanced = normal restoration, Strong = stronger sharpening/contrast, "
     "Old photo = grayscale-style restoration for damaged old images."
 )
-
+# either 
+# q - quality 
+# f - fidelity model
 model_type = st.selectbox(
     "SUPIR model type",
     options=["Q", "F"],
@@ -55,7 +59,14 @@ if uploaded_file is not None:
 
     with col1:
         st.subheader("Original image")
-        st.image(original_image, use_container_width=True)
+        st.write(
+            f"Resolution: "
+            f"{original_image.width}x{original_image.height}"
+        )
+        st.image(
+            original_image,
+            use_container_width=True,
+        )
 
     if st.button("Restore image"):
         with st.spinner("Sending image to backend..."):
@@ -85,8 +96,15 @@ if uploaded_file is not None:
 
                 with col2:
                     st.subheader("Restored image")
-                    st.image(restored_image, use_container_width=True)
-
+                    st.write(
+                        f"Resolution: "
+                        f"{restored_image.width}x{restored_image.height}"
+                    )
+                    st.image(
+                        restored_image,
+                        use_container_width=True,
+                    )
+                    
                 st.download_button(
                     label="Download restored image",
                     data=response.content,
