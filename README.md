@@ -6,16 +6,17 @@ REST API and web interface for image restoration and super-resolution using SUPI
 
 # Project Overview
 
-This project provides:
+This project simulates a lightweight version of the SUPIR image restoration workflow using classical computer vision techniques.
 
-- FastAPI backend for image restoration
-- Streamlit frontend GUI
-- Image upload and download support
-- Mock restoration pipeline
-- SUPIR integration architecture
-- Modular service-based backend design
+The goal of the project was to build a complete restoration system architecture with:
 
-The application allows users to upload low-quality images, configure restoration settings, and receive restored images through a web interface.
+- backend API
+- frontend GUI
+- configurable restoration pipeline
+- image enhancement logic
+- modular SUPIR integration structure
+
+Instead of running the original heavy SUPIR diffusion model, the project implements a lightweight restoration pipeline using OpenCV and PIL processing techniques that can run locally without GPU requirements.
 
 ---
 
@@ -114,39 +115,123 @@ Example parameters:
 |---|---|---|
 | image | file | image.png |
 | upscale | integer | 2 |
-| mode | string | mock |
+| mode | string | balanced |
 | model_type | string | Q |
 
 ---
 
 # Frontend Features
 
-The Streamlit frontend provides:
+The frontend allows users to configure restoration parameters before processing the image.
 
-- image upload
-- restoration settings
-- original image preview
+Supported controls include:
+
+- upscale factor
+- restoration mode
+- SUPIR model type
+- image preview
 - restored image preview
-- image download button
+- restored image download
 
 ---
 
-# Current Restoration Modes
+# Restoration System
 
-## Mock Mode
+The restoration pipeline is based on classical image processing operations.
 
-Current implementation uses mock restoration:
+Implemented processing stages:
 
-- uploaded image is copied
-- output filename is generated automatically
-- backend pipeline is fully functional
+- denoising
+- upscale resizing
+- local contrast enhancement
+- CLAHE histogram equalization
+- sharpening
+- color enhancement
+- grayscale restoration for old photos
 
-This mode is used to validate:
-- API flow
-- frontend-backend communication
-- image handling
-- file responses
-- system architecture
+The pipeline was designed to imitate the behavior of image restoration models while remaining lightweight and runnable on local hardware.
+
+## Restoration Modes
+
+### Balanced
+Default restoration profile with moderate denoising and sharpening.
+
+Designed for:
+- normal low-quality images
+- compressed photos
+- light blur correction
+
+### Strong
+More aggressive restoration profile.
+
+Uses:
+- stronger sharpening
+- stronger contrast enhancement
+- higher detail extraction
+
+Designed for:
+- blurry images
+- noisy images
+- compressed screenshots
+
+### Old Photo
+Special profile for historical and damaged photos.
+
+Uses:
+- grayscale restoration
+- softer sharpening
+- histogram equalization
+- reduced color enhancement
+
+Designed for:
+- scanned photos
+- vintage photographs
+- damaged black-and-white images
+
+## SUPIR Model Types
+
+The frontend includes two simulated SUPIR model profiles:
+
+### Q Model
+Quality-oriented profile.
+
+Uses:
+- stronger sharpening
+- stronger contrast enhancement
+- more visually enhanced output
+
+Designed for:
+- visually impressive restoration
+- sharper output images
+
+### F Model
+Fidelity-oriented profile.
+
+Uses:
+- softer processing
+- lower sharpening
+- more natural image preservation
+
+Designed for:
+- preserving original image appearance
+- avoiding over-processing
+
+## Upscale Factor
+
+The upscale factor controls image resolution scaling.
+
+Available options:
+
+- 1x
+- 2x
+- 4x
+
+Example:
+
+- 300x300 image with 2x upscale becomes 600x600
+- 300x300 image with 4x upscale becomes 1200x1200
+
+Upscaling uses Lanczos interpolation for higher-quality resizing.
 
 ---
 
@@ -158,7 +243,7 @@ The project includes SUPIR as a Git submodule:
 git submodule add https://github.com/Fanghua-Yu/SUPIR.git external/SUPIR
 ```
 
-Current implementation prepares the architecture for real SUPIR subprocess execution.
+Current implementation includes a lightweight restoration pipeline and prepares the architecture for future real SUPIR model integration.
 
 ---
 
@@ -248,32 +333,45 @@ Example branches:
 - `backend-supir-subprocess`
 - `frontend-streamlit-gui`
 - `docs-readme-setup`
+- 'frontend-streamlit-gui'
+- 'improve-restoration-quality'
+- 'kill-sharpening'
+- 'lightweight-restoration-demo'
+- 'restoration-models'
+- 'restoration-enchancement',
+- 'supir-runtime-setup'
+---
+
+# Limitations
+
+The original SUPIR model requires:
+
+- large GPU memory
+- CUDA support
+- high-end NVIDIA GPU
+- heavy model weights
+
+Because of hardware limitations and local macOS execution constraints, the current project uses a lightweight restoration pipeline instead of full diffusion-based SUPIR inference.
+
+The project architecture, API flow, frontend, and restoration workflow remain fully compatible with future real SUPIR integration.
 
 ---
 
-# Future Improvements
-
-Planned improvements:
-
-- real SUPIR inference
-- GPU support
-- asynchronous processing
-- Docker support
-- deployment
-- image history
-- user authentication
-- queue system for heavy processing
-
----
-
-# Demo Status
+# Current Demo Status
 
 Current demo includes:
 
-- working backend
-- working frontend
+- working FastAPI backend
+- working Streamlit frontend
 - image upload pipeline
-- restoration request pipeline
+- image restoration pipeline
+- configurable restoration settings
+- restoration modes
+- simulated SUPIR model profiles
+- upscale processing
 - restored image delivery
+- downloadable restored images
 
-The system architecture is production-oriented and prepared for real SUPIR integration.
+The current implementation uses lightweight CPU-based processing instead of the original GPU-heavy SUPIR diffusion model.
+
+This approach was selected to allow local execution on standard hardware and macOS environments without requiring high-end GPU infrastructure.
