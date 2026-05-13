@@ -8,9 +8,21 @@ from PIL import Image, ImageEnhance
 class SUPIRService:
     def __init__(self):
         self.model_loaded = False
+        self.sr_model = None
 
     def load_model(self):
-        print("Lightweight SUPIR-inspired restoration pipeline is ready.")
+        model_path = Path("models/FSRCNN_x2.pb")
+
+        if not model_path.exists():
+            raise FileNotFoundError(
+                "FSRCNN_x2.pb model was not found in models/ folder."
+            )
+
+        self.sr_model = cv2.dnn_superres.DnnSuperResImpl_create()
+        self.sr_model.readModel(str(model_path))
+        self.sr_model.setModel("fsrcnn", 2)
+
+        print("FSRCNN x2 super-resolution model loaded.")
         self.model_loaded = True
 
     def restore_image(
@@ -31,9 +43,10 @@ class SUPIRService:
 
         if image is None:
             raise ValueError("Could not read uploaded image.")
-        
+
         mode = mode.lower()
         model_type = model_type.upper()
+
         try:
             upscale = int(upscale)
         except ValueError:
@@ -42,58 +55,58 @@ class SUPIRService:
         if upscale not in [1, 2, 4]:
             upscale = 2
 
+        # Model-based super-resolution
+        if upscale == 1:
+            restored = image.copy()
+
+        elif upscale == 2:
+            restored = self.sr_model.upsample(image)
+
+        else:
+            first_pass = self.sr_model.upsample(image)
+            restored = self.sr_model.upsample(first_pass)
+
+        # Q = quality-oriented, stronger visible enhancement
+        # F = fidelity-oriented, softer and closer to original
         if model_type == "Q":
             contrast_boost = 1.12
-            sharpness_boost = 1.25
+            sharpness_boost = 1.20
             color_boost = 1.06
-            sharpen_strength = 0.65
+            sharpen_strength = 0.45
         else:
-            contrast_boost = 1.05
-            sharpness_boost = 1.08
+            contrast_boost = 1.04
+            sharpness_boost = 1.05
             color_boost = 1.02
-            sharpen_strength = 0.35
-            
-        # 3 restoration model 
-        # balanced - default, good for most images
-        # strong - strong denoise, bigger contrast, sharpening
-        # old photo - gray scale ? contrast boost 
-        if mode == "strong":
-            denoise_h = 5
-            clahe_clip = 1.8
-            sharpen_strength += 0.25
-            contrast_boost += 0.08
+            sharpen_strength = 0.20
 
+        if mode == "strong":
+            denoise_h = 3
+            clahe_clip = 1.6
+            sharpen_strength += 0.20
+            contrast_boost += 0.06
 
         elif mode == "old_photo":
-            denoise_h = 4
-            clahe_clip = 1.5
-            contrast_boost = 1.10
-            sharpness_boost = 1.12
+            denoise_h = 2
+            clahe_clip = 1.4
+            contrast_boost = 1.08
+            sharpness_boost = 1.08
             color_boost = 1.0
-            sharpen_strength = 0.25
+            sharpen_strength = 0.20
 
         else:
-            denoise_h = 3
-            clahe_clip = 1.4
-        # 1 mild denoise
+            denoise_h = 2
+            clahe_clip = 1.3
+
         denoised = cv2.fastNlMeansDenoisingColored(
-            image,
+            restored,
             None,
             h=denoise_h,
             hColor=denoise_h,
             templateWindowSize=7,
             searchWindowSize=21,
         )
-        # 2 upscale
-        height, width = denoised.shape[:2]
-        upscaled = cv2.resize(
-            denoised,
-            (width * upscale, height * upscale),
-            interpolation=cv2.INTER_LANCZOS4,
-        )
 
-        # 3 light contrast
-        lab = cv2.cvtColor(upscaled, cv2.COLOR_BGR2LAB)
+        lab = cv2.cvtColor(denoised, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
 
         clahe = cv2.createCLAHE(
@@ -105,42 +118,33 @@ class SUPIRService:
         merged = cv2.merge((l, a, b))
         contrast = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
 
-       
-        # 4 stop crazy sharpening
         blur = cv2.GaussianBlur(
-            #smooth,
-            contrast, 
+            contrast,
             (0, 0),
             sigmaX=1.0,
         )
 
         sharpened = cv2.addWeighted(
             contrast,
-            1.0+ sharpen_strength,
+            1.0 + sharpen_strength,
             blur,
-            - sharpen_strength,
+            -sharpen_strength,
             0,
         )
 
-        #rgb = cv2.cvtColor(sharpened, cv2.COLOR_BGR2RGB)
-        #pil_img = Image.fromarray(rgb)
-        # optional old photo mode
         rgb = cv2.cvtColor(sharpened, cv2.COLOR_BGR2RGB)
         pil_img = Image.fromarray(rgb)
 
-        if mode == "old_photo":
-            pil_img = ImageEnhance.Contrast(pil_img).enhance(1.10)
-            pil_img = ImageEnhance.Sharpness(pil_img).enhance(1.12)
-            pil_img = ImageEnhance.Color(pil_img).enhance(0.92)
+        pil_img = ImageEnhance.Contrast(pil_img).enhance(contrast_boost)
+        pil_img = ImageEnhance.Sharpness(pil_img).enhance(sharpness_boost)
 
-        else:
-            pil_img = ImageEnhance.Contrast(pil_img).enhance(contrast_boost)
-            pil_img = ImageEnhance.Sharpness(pil_img).enhance(sharpness_boost)
+        if mode != "old_photo":
             pil_img = ImageEnhance.Color(pil_img).enhance(color_boost)
 
         output_path = output_dir / f"{uuid4().hex}_{mode}_{model_type}_restored.png"
         pil_img.save(output_path)
 
         return output_path
+
 
 supir_service = SUPIRService()
