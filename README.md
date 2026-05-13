@@ -49,6 +49,9 @@ SUPIR Integration
 
 ## Image Processing
 
+- OpenCV
+- OpenCV DNN Super Resolution
+- Pretrained FSRCNN x2 model
 - Pillow (PIL)
 
 ## Version Control
@@ -72,6 +75,9 @@ supir-image-restoration-api/
 │
 ├── frontend/
 │   └── streamlit_app.py
+│ 
+├── models/
+│   └── FSRCNN_x2.pb
 │
 ├── external/
 │   └── SUPIR/
@@ -137,19 +143,33 @@ Supported controls include:
 
 # Restoration System
 
-The restoration pipeline is based on classical image processing operations.
+The restoration pipeline uses a pretrained FSRCNN x2 super-resolution model together with classical image processing operations.
 
 Implemented processing stages:
 
+- pretrained FSRCNN x2 super-resolution
 - denoising
-- upscale resizing
 - local contrast enhancement
 - CLAHE histogram equalization
 - sharpening
 - color enhancement
-- grayscale restoration for old photos
+- grayscale-style restoration for old photos
 
 The pipeline was designed to imitate the behavior of image restoration models while remaining lightweight and runnable on local hardware.
+
+## Pretrained Super-Resolution Model
+
+The project uses a pretrained FSRCNN x2 model stored in:
+
+models/FSRCNN_x2.pb
+
+This model is loaded through OpenCV DNN Super Resolution.
+
+For 2x upscale, the model is applied once.
+
+For 4x upscale, the same x2 model is applied twice.
+
+For 1x upscale, the image keeps its original resolution and only restoration filters are applied.
 
 ## Restoration Modes
 
@@ -364,14 +384,14 @@ Current demo includes:
 - working FastAPI backend
 - working Streamlit frontend
 - image upload pipeline
-- image restoration pipeline
+- pretrained FSRCNN x2 super-resolution model
 - configurable restoration settings
-- restoration modes
-- simulated SUPIR model profiles
-- upscale processing
-- restored image delivery
-- downloadable restored images
+- upscale factors: 1x, 2x, 4x
+- restoration modes: balanced, strong, old_photo
+- SUPIR-inspired Q and F processing profiles
+- restored image preview
+- restored image download
 
-The current implementation uses lightweight CPU-based processing instead of the original GPU-heavy SUPIR diffusion model.
+The current implementation uses a lightweight pretrained super-resolution model instead of the original GPU-heavy SUPIR diffusion model.
 
-This approach was selected to allow local execution on standard hardware and macOS environments without requiring high-end GPU infrastructure.
+This allows the project to run locally on standard hardware while still demonstrating a model-based image restoration workflow.
