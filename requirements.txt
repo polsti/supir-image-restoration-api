@@ -4,5 +4,5 @@ python-multipart
 pillow
 streamlit
 requests
-opencv-python
+opencv-contrib-python
 numpy
