@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import FileResponse
 
-from app.utils import save_uploaded_image
+from app.utils import save_uploaded_image, validate_image_file
 from app.supir_service import supir_service
 
 
@@ -48,6 +48,7 @@ async def restore_image(
         }
 
     saved_path = await save_uploaded_image(image, INPUT_DIR)
+    validate_image_size(saved_path)
 
     output_path = supir_service.restore_image(
         input_path=saved_path,
